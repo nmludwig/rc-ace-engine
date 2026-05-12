@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.DS_Store
+outputs/
+microsites/
+venv/
+.venv/

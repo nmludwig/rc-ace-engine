@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RingCentral ACE Engine</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --orange: #FF6A00;
+  --orange-light: #FFF0E8;
+  --dark: #1A1A1A;
+  --mid: #4A4A4A;
+  --light: #888888;
+  --rule: #E8E8E8;
+  --bg: #F7F7F5;
+  --white: #FFFFFF;
+  --critical: #E24B4A;
+  --critical-bg: #FCEBEB;
+  --high: #BA7517;
+  --high-bg: #FAEEDA;
+  --blue: #185FA5;
+  --blue-bg: #E6F1FB;
+  --green: #1D9E75;
+  --green-bg: #E1F5EE;
+  --r: 10px;
+  --sh: 0 2px 16px rgba(0,0,0,.08);
+  --shl: 0 8px 40px rgba(0,0,0,.12);
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+  min-height: 100vh;
+}
+
+/* ── HEADER ───────────────────────────────────────────── */
+.header {
+  background: var(--dark);
+  border-bottom: 2px solid var(--orange);
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand { display: flex; align-items: center; gap: 6px; }
+.brand-rc { color: var(--orange); font-weight: 700; font-size: 15px; }
+.brand-product { color: #fff; font-size: 15px; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.user-name { color: #aaa; font-size: 13px; }
+.btn-logout {
+  color: #666; font-size: 12px; padding: 5px 12px;
+  border: 1px solid #333; border-radius: 5px;
+  text-decoration: none; transition: .15s;
+}
+.btn-logout:hover { color: #fff; border-color: #555; }
+
+/* ── HERO ─────────────────────────────────────────────── */
+.hero {
+  background: linear-gradient(135deg, #FF7A35 0%, #FFB347 45%, #D4A5C9 80%, #A8C8E8 100%);
+  padding: 56px 32px 48px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,.15), rgba(0,0,0,.04));
+}
+.hero-inner { position: relative; z-index: 1; }
+.hero-eyebrow {
+  display: inline-block;
+  background: rgba(255,255,255,.2);
+  color: #fff; font-size: 11px; font-weight: 600;
+  letter-spacing: .1em; padding: 4px 14px; border-radius: 20px;
+  margin-bottom: 16px; text-transform: uppercase;
+}
+.hero h1 {
+  font-family: Georgia, serif;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 700; color: #fff;
+  text-shadow: 0 2px 16px rgba(0,0,0,.2);
+  margin-bottom: 10px; line-height: 1.15;
+}
+.hero-sub { font-size: 15px; color: rgba(255,255,255,.85); max-width: 520px; margin: 0 auto; }
+
+/* ── MAIN ─────────────────────────────────────────────── */
+.main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
+
+/* ── STEPS ────────────────────────────────────────────── */
+.steps { display: flex; gap: 0; margin-bottom: 40px; }
+.step-item {
+  flex: 1; display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; background: var(--white);
+  border: 1px solid var(--rule); border-right: none;
+  font-size: 13px; font-weight: 500; color: var(--light);
+  transition: .2s; position: relative;
+}
+.step-item:first-child { border-radius: var(--r) 0 0 var(--r); }
+.step-item:last-child  { border-right: 1px solid var(--rule); border-radius: 0 var(--r) var(--r) 0; }
+.step-item.active  { color: var(--dark); background: var(--orange-light); border-color: var(--orange); }
+.step-item.done    { color: var(--green); background: var(--green-bg); border-color: #9DE0C7; }
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--rule); color: var(--light);
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: .2s;
+}
+.step-item.active .step-num { background: var(--orange); color: #fff; }
+.step-item.done   .step-num { background: var(--green);  color: #fff; }
+
+/* ── PANELS ───────────────────────────────────────────── */
+.panel {
+  background: var(--white);
+  border-radius: var(--r);
+  border: 1px solid var(--rule);
+  box-shadow: var(--sh);
+  padding: 32px;
+  margin-bottom: 24px;
+}
+.panel-title {
+  font-size: 18px; font-weight: 700;
+  margin-bottom: 6px; letter-spacing: -.02em;
+}
+.panel-sub { font-size: 14px; color: var(--light); margin-bottom: 28px; line-height: 1.5; }
+
+/* ── FORM ─────────────────────────────────────────────── */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.form-row.single { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+label { font-size: 12px; font-weight: 600; color: var(--mid); text-transform: uppercase; letter-spacing: .04em; }
+input, select {
+  padding: 10px 14px; border: 1.5px solid var(--rule);
+  border-radius: 6px; font-size: 14px; color: var(--dark);
+  background: var(--bg); transition: .15s; outline: none;
+}
+input:focus, select:focus { border-color: var(--orange); background: #fff; }
+.date-presets { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.preset {
+  font-size: 12px; font-weight: 500; padding: 5px 12px;
+  border: 1px solid var(--rule); border-radius: 5px;
+  background: var(--bg); cursor: pointer; color: var(--mid); transition: .15s;
+}
+.preset:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-light); }
+.preset.active { border-color: var(--orange); color: var(--orange); background: var(--orange-light); }
+
+/* ── BUTTONS ──────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border-radius: 7px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  border: none; transition: .15s; text-decoration: none;
+}
+.btn-primary { background: var(--orange); color: #fff; }
+.btn-primary:hover { background: #e85e00; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,106,0,.3); }
+.btn-primary:disabled { background: #ccc; color: #fff; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-ace {
+  background: linear-gradient(135deg, #1A1A1A 0%, #333 100%);
+  color: #fff; border: none;
+}
+.btn-ace:hover { background: linear-gradient(135deg, #333 0%, #444 100%); transform: translateY(-1px); }
+.btn-dl {
+  background: var(--bg); color: var(--dark);
+  border: 1.5px solid var(--rule); font-size: 13px; padding: 8px 16px;
+}
+.btn-dl:hover { border-color: var(--orange); color: var(--orange); }
+.btn-link { background: none; color: var(--orange); padding: 8px 0; font-size: 13px; }
+
+/* ── LOGIN CARD ───────────────────────────────────────── */
+.login-card { text-align: center; padding: 56px 32px; }
+.login-card h2 { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+.login-card p { font-size: 15px; color: var(--light); margin-bottom: 32px; max-width: 400px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+.btn-login {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--orange); color: #fff;
+  padding: 14px 32px; border-radius: 8px;
+  font-size: 15px; font-weight: 700;
+  text-decoration: none; transition: .15s;
+  box-shadow: 0 4px 16px rgba(255,106,0,.25);
+}
+.btn-login:hover { background: #e85e00; transform: translateY(-2px); }
+.login-note { font-size: 12px; color: var(--light); margin-top: 16px; }
+
+/* ── PROGRESS LOG ─────────────────────────────────────── */
+.log-wrap {
+  background: #1A1A1A; border-radius: 8px;
+  padding: 16px; font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px; max-height: 280px; overflow-y: auto;
+  margin-top: 20px;
+}
+.log-line { padding: 2px 0; line-height: 1.6; }
+.log-line.info  { color: #aaa; }
+.log-line.ok    { color: #4ADE80; }
+.log-line.warn  { color: #FBBF24; }
+.log-line.error { color: #F87171; }
+.log-time { color: #555; margin-right: 8px; }
+
+.progress-bar-outer {
+  height: 6px; background: #333; border-radius: 3px;
+  overflow: hidden; margin-top: 16px;
+}
+.progress-bar-inner {
+  height: 100%; background: var(--orange);
+  border-radius: 3px; transition: width .4s ease;
+}
+
+/* ── SUMMARY CARDS ────────────────────────────────────── */
+.summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px; margin-bottom: 24px;
+}
+.summary-stat {
+  background: var(--bg); border-radius: 8px; padding: 16px;
+  border: 1px solid var(--rule); text-align: center;
+}
+.summary-val { font-size: 28px; font-weight: 700; color: var(--dark); line-height: 1; margin-bottom: 4px; }
+.summary-lbl { font-size: 11px; color: var(--light); text-transform: uppercase; letter-spacing: .05em; font-weight: 500; }
+
+/* ── ACE PANEL ────────────────────────────────────────── */
+.ace-panel {
+  border: 2px solid var(--orange);
+  background: linear-gradient(135deg, #FFF5EE 0%, #FFF0E8 100%);
+}
+.ace-panel .panel-title { color: var(--orange); }
+.ace-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--orange); color: #fff;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px;
+  margin-bottom: 12px; text-transform: uppercase; letter-spacing: .06em;
+}
+
+/* ── MICROSITE RESULT ─────────────────────────────────── */
+.microsite-result {
+  background: #1A1A1A; border-radius: var(--r);
+  padding: 28px 32px; margin-top: 24px;
+}
+.microsite-result h3 { color: #fff; font-size: 16px; margin-bottom: 6px; }
+.microsite-result p  { color: #888; font-size: 13px; margin-bottom: 20px; }
+.microsite-url {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,.06); border-radius: 7px;
+  padding: 14px 16px; border: 1px solid rgba(255,255,255,.1);
+  margin-bottom: 16px;
+}
+.microsite-url-text {
+  font-family: 'SF Mono', monospace; font-size: 13px;
+  color: var(--orange); flex: 1; word-break: break-all;
+}
+.btn-copy {
+  background: rgba(255,255,255,.1); color: #fff;
+  border: none; padding: 6px 14px; border-radius: 5px;
+  font-size: 12px; cursor: pointer; transition: .15s; flex-shrink: 0;
+}
+.btn-copy:hover { background: rgba(255,255,255,.2); }
+.microsite-downloads { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-dl-white {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.08); color: #ddd;
+  border: 1px solid rgba(255,255,255,.15);
+  padding: 8px 14px; border-radius: 6px; font-size: 12px;
+  cursor: pointer; transition: .15s; text-decoration: none;
+}
+.btn-dl-white:hover { background: rgba(255,255,255,.16); color: #fff; }
+
+/* ── MISC ─────────────────────────────────────────────── */
+.hidden { display: none !important; }
+.divider { border: none; border-top: 1px solid var(--rule); margin: 24px 0; }
+.text-muted { font-size: 13px; color: var(--light); }
+.tag {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  padding: 2px 9px; border-radius: 20px;
+}
+.tag-orange { background: var(--orange-light); color: var(--orange); }
+.tag-green  { background: var(--green-bg); color: var(--green); }
+
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+.pulsing { animation: pulse 1.5s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">
+    <span class="brand-rc">RingCentral</span>
+    <span class="brand-product">ACE Engine</span>
+  </div>
+  <div class="header-right">
+    {% if authed %}
+      <span class="user-name">{{ display_name }}</span>
+      <a href="/logout" class="btn-logout">Sign out</a>
+    {% endif %}
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">AI Conversation Expert · POC Framework</div>
+    <h1>From transcript to microsite<br>in one workflow</h1>
+    <p class="hero-sub">Log in with RingCentral, export transcripts, run ACE analysis, get a live customer microsite.</p>
+  </div>
+</div>
+
+<main class="main">
+
+{% if not authed %}
+<!-- ── NOT LOGGED IN ─────────────────────────────────── -->
+<div class="panel login-card">
+  <h2>Connect your RingCentral account</h2>
+  <p>Log in with your RingCentral admin credentials to export call transcripts and run the ACE analysis engine.</p>
+  <a href="/login" class="btn-login">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+    Login with RingCentral
+  </a>
+  <div class="login-note">No credentials are stored — OAuth only. Transcripts are never saved to our servers.</div>
+</div>
+
+{% else %}
+<!-- ── LOGGED IN ─────────────────────────────────────── -->
+
+<!-- Step indicator -->
+<div class="steps" id="steps">
+  <div class="step-item active" id="step-1-ind">
+    <div class="step-num">1</div>
+    <span>Export transcripts</span>
+  </div>
+  <div class="step-item" id="step-2-ind">
+    <div class="step-num">2</div>
+    <span>Review &amp; download</span>
+  </div>
+  <div class="step-item" id="step-3-ind">
+    <div class="step-num">3</div>
+    <span>Run ACE analysis</span>
+  </div>
+</div>
+
+<!-- STEP 1: Export -->
+<div id="step-1" class="panel">
+  <div class="ace-badge">Step 1</div>
+  <div class="panel-title">Export call transcripts</div>
+  <div class="panel-sub">Enter the customer name and date range. The app will pull all recorded calls with RingSense transcripts from your RingCentral account.</div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>Customer / Account name</label>
+      <input type="text" id="customer-name" placeholder="e.g. Tabor Street" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Industry</label>
+      <input type="text" id="industry" placeholder="e.g. Agriculture Equipment" autocomplete="off">
+    </div>
+  </div>
+
+  <div style="margin-bottom:8px"><label>Date range</label></div>
+  <div class="date-presets">
+    <span class="preset" data-days="7">Last 7 days</span>
+    <span class="preset" data-days="30">Last 30 days</span>
+    <span class="preset" data-days="90">Last 90 days</span>
+    <span class="preset" data-days="180">Last 6 months</span>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>From</label>
+      <input type="date" id="date-from">
+    </div>
+    <div class="form-group">
+      <label>To</label>
+      <input type="date" id="date-to">
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="btn-start-download" onclick="startDownload()">
+    Export transcripts →
+  </button>
+</div>
+
+<!-- STEP 1 PROGRESS -->
+<div id="step-1-progress" class="panel hidden">
+  <div class="panel-title pulsing" id="download-title">Downloading transcripts…</div>
+  <div class="progress-bar-outer">
+    <div class="progress-bar-inner" id="download-progress-bar" style="width:0%"></div>
+  </div>
+  <div class="log-wrap" id="download-log"></div>
+</div>
+
+<!-- STEP 2: Review -->
+<div id="step-2" class="panel hidden">
+  <div class="ace-badge tag-green">Step 2 complete</div>
+  <div class="panel-title">Download complete</div>
+  <div class="panel-sub" id="download-summary-text"></div>
+
+  <div class="summary-grid" id="download-stats"></div>
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+    <a id="btn-dl-xlsx" href="#" class="btn btn-dl">📊 Download Excel</a>
+    <a id="btn-dl-pdf"  href="#" class="btn btn-dl">📄 Download PDF</a>
+  </div>
+
+  <hr class="divider">
+
+  <div class="panel ace-panel" style="margin:0;box-shadow:none">
+    <div class="ace-badge">Step 3 — ACE Analysis</div>
+    <div class="panel-title">Run the ACE analysis engine</div>
+    <div class="panel-sub">Claude analyzes every transcript against 18 standard patterns and produces a scored issue report, competitor intelligence, rep performance, retention risk signals, and a live HTML microsite.</div>
+
+    <button class="btn btn-ace" id="btn-start-ace" onclick="startAce()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Run ACE Analysis →
+    </button>
+  </div>
+</div>
+
+<!-- STEP 3 PROGRESS -->
+<div id="step-3-progress" class="panel hidden ace-panel">
+  <div class="panel-title pulsing" id="ace-title">Running ACE analysis…</div>
+  <div class="progress-bar-outer">
+    <div class="progress-bar-inner" id="ace-progress-bar" style="width:0%"></div>
+  </div>
+  <div class="log-wrap" id="ace-log"></div>
+</div>
+
+<!-- STEP 3 RESULT -->
+<div id="step-3-result" class="hidden">
+  <div class="microsite-result">
+    <h3>🚀 Your ACE microsite is live</h3>
+    <p>Share this URL with your customer or bring it to the meeting. All outputs are ready to download.</p>
+    <div class="microsite-url">
+      <span class="microsite-url-text" id="microsite-url-text"></span>
+      <button class="btn-copy" onclick="copyUrl()">Copy</button>
+    </div>
+    <div class="microsite-downloads">
+      <a id="ace-open-link" href="#" target="_blank" class="btn-dl-white">
+        🌐 Open microsite
+      </a>
+      <a id="ace-dl-pdf" href="#" class="btn-dl-white">📄 Leave-behind PDF</a>
+      <a id="ace-dl-scorecard" href="#" class="btn-dl-white">✅ Scorecard</a>
+      <a id="ace-dl-keywords" href="#" class="btn-dl-white">🔍 Keywords</a>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+</main>
+
+<script>
+let downloadJobId = null;
+let aceJobId      = null;
+let downloadPoll  = null;
+let acePoll       = null;
+
+// Date presets
+document.querySelectorAll('.preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const days = parseInt(btn.dataset.days);
+    const to   = new Date();
+    const from = new Date(to - days * 86400000);
+    document.getElementById('date-to').value   = to.toISOString().split('T')[0];
+    document.getElementById('date-from').value = from.toISOString().split('T')[0];
+  });
+});
+
+// Default to last 30 days
+(function() {
+  const to   = new Date();
+  const from = new Date(to - 30 * 86400000);
+  document.getElementById('date-to').value   = to.toISOString().split('T')[0];
+  document.getElementById('date-from').value = from.toISOString().split('T')[0];
+  document.querySelector('[data-days="30"]').classList.add('active');
+})();
+
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById(`step-${i}-ind`);
+    if (!el) return;
+    el.classList.remove('active','done');
+    if (i < n)  el.classList.add('done');
+    if (i === n) el.classList.add('active');
+  });
+}
+
+async function startDownload() {
+  const customer = document.getElementById('customer-name').value.trim();
+  const industry = document.getElementById('industry').value.trim();
+  const from     = document.getElementById('date-from').value;
+  const to       = document.getElementById('date-to').value;
+  if (!customer) { alert('Please enter a customer name.'); return; }
+  if (!from || !to) { alert('Please select a date range.'); return; }
+
+  document.getElementById('btn-start-download').disabled = true;
+  document.getElementById('step-1-progress').classList.remove('hidden');
+
+  const res = await fetch('/api/start-download', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ customer_name: customer, industry, date_from: from, date_to: to })
+  });
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+  downloadJobId = data.job_id;
+  downloadPoll = setInterval(() => pollDownload(), 3000);
+}
+
+async function pollDownload() {
+  const res  = await fetch(`/api/job/${downloadJobId}`);
+  const job  = await res.json();
+  const prog = document.getElementById('download-progress-bar');
+  const log  = document.getElementById('download-log');
+
+  prog.style.width = job.progress + '%';
+  log.innerHTML = (job.log || []).map(l =>
+    `<div class="log-line ${l.level}"><span class="log-time">${l.t}</span>${l.msg}</div>`
+  ).join('');
+  log.scrollTop = log.scrollHeight;
+
+  if (job.status === 'done') {
+    clearInterval(downloadPoll);
+    showDownloadComplete(job);
+  } else if (job.status === 'error') {
+    clearInterval(downloadPoll);
+    document.getElementById('download-title').textContent = '❌ Error — see log';
+    document.getElementById('download-title').classList.remove('pulsing');
+  }
+}
+
+function showDownloadComplete(job) {
+  document.getElementById('download-title').textContent = '✅ Download complete';
+  document.getElementById('download-title').classList.remove('pulsing');
+  document.getElementById('step-1-progress').classList.add('hidden');
+  document.getElementById('step-2').classList.remove('hidden');
+  setStep(2);
+
+  const s = job.summary || {};
+  document.getElementById('download-summary-text').textContent =
+    `${s.customer} · ${s.date_from} → ${s.date_to} · ${s.total || 0} calls · ${s.transcripts || 0} with transcripts`;
+
+  document.getElementById('download-stats').innerHTML = [
+    [s.total || 0,       'Total calls'],
+    [s.transcripts || 0, 'With transcripts'],
+  ].map(([v,l]) =>
+    `<div class="summary-stat"><div class="summary-val">${v}</div><div class="summary-lbl">${l}</div></div>`
+  ).join('');
+
+  if (job.files.includes('xlsx'))
+    document.getElementById('btn-dl-xlsx').href = `/api/download/${downloadJobId}/xlsx`;
+  if (job.files.includes('pdf'))
+    document.getElementById('btn-dl-pdf').href  = `/api/download/${downloadJobId}/pdf`;
+}
+
+async function startAce() {
+  document.getElementById('btn-start-ace').disabled = true;
+  document.getElementById('step-3-progress').classList.remove('hidden');
+  setStep(3);
+
+  const industry = document.getElementById('industry').value.trim() || 'Equipment';
+  const customer = document.getElementById('customer-name').value.trim();
+
+  const res = await fetch('/api/start-ace', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      source_job_id: downloadJobId,
+      customer_name: customer,
+      industry: industry
+    })
+  });
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+  aceJobId = data.job_id;
+  acePoll  = setInterval(() => pollAce(), 3000);
+}
+
+async function pollAce() {
+  const res = await fetch(`/api/job/${aceJobId}`);
+  const job = await res.json();
+  const prog = document.getElementById('ace-progress-bar');
+  const log  = document.getElementById('ace-log');
+
+  prog.style.width = job.progress + '%';
+  log.innerHTML = (job.log || []).map(l =>
+    `<div class="log-line ${l.level}"><span class="log-time">${l.t}</span>${l.msg}</div>`
+  ).join('');
+  log.scrollTop = log.scrollHeight;
+
+  if (job.status === 'done') {
+    clearInterval(acePoll);
+    showAceComplete(job);
+  } else if (job.status === 'error') {
+    clearInterval(acePoll);
+    document.getElementById('ace-title').textContent = '❌ ACE analysis failed — see log';
+    document.getElementById('ace-title').classList.remove('pulsing');
+  }
+}
+
+function showAceComplete(job) {
+  document.getElementById('ace-title').textContent  = '✅ ACE analysis complete';
+  document.getElementById('ace-title').classList.remove('pulsing');
+  document.getElementById('step-3-result').classList.remove('hidden');
+
+  const url  = window.location.origin + job.microsite_url;
+  const slug = (job.summary || {}).site_slug || '';
+
+  document.getElementById('microsite-url-text').textContent = url;
+  document.getElementById('ace-open-link').href = job.microsite_url;
+  document.getElementById('ace-dl-pdf').href       = `/ace/${slug}/download/pdf`;
+  document.getElementById('ace-dl-scorecard').href = `/ace/${slug}/download/scorecard`;
+  document.getElementById('ace-dl-keywords').href  = `/ace/${slug}/download/keywords`;
+}
+
+function copyUrl() {
+  const text = document.getElementById('microsite-url-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+</script>
+
+</body>
+</html>
